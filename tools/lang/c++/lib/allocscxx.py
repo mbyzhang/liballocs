@@ -4,9 +4,11 @@
 
 import os, sys
 # HACK
-liballocs_base = os.path.realpath(os.path.dirname(__file__) + "/../../../..")
+REAL_FILE = os.path.realpath(__file__)
+REAL_DIR = os.path.realpath(os.path.dirname(REAL_FILE))
+liballocs_base = os.path.realpath(REAL_DIR + "/../../../..")
 sys.path.append(liballocs_base + "/tools")
-sys.path.append(liballocs_base + "tools/lang/c++/lib")
+sys.path.append(liballocs_base + "/tools/lang/c++/lib")
 from allocscompilerwrapper import *
 
 class AllocsCxx(AllocsCompilerWrapper):
