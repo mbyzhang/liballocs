@@ -14,11 +14,22 @@
 *.swp
 
 /tests/alloca/alloca
+/tests/alloca-clang/alloca-clang
 /tests/offsetof/offsetof
 /tests/section-group/section-group
 /tests/simple-client/simple-client
 /tests/simple-multi-alloc/simple-multi-alloc
 /tests/sloppy-dumptypes/sloppy-dumptypes
+/tests/alloca-clang/alloca-clang.bc
+/tests/anon-aliases/anon-aliases
+/tests/hello-build-id/hello-build-id
+/tests/hello-via-wrapper/hello-via-wrapper
+/tests/malloc-from-dso/malloc-from-dso
+/tests/plugin-hello/plugin-hello
+/tests/sizeof-derived/sizeof-derived
+/tests/**/*.usedtypes.c
+/tests/**/*.s
+
 /tools/allocsites
 /tools/dumptypes
 /tools/ifacetypes
@@ -26,6 +37,10 @@
 /tools/lang/c/bin/base-types-translation
 /tools/lang/c/src/base-types-translation
 /tools/usedtypes
+/tools/dumpsyscalls
+/tools/dwarf-machine-self-test
+/tools/frametypes2
+/tools/noopgen
 /tools/lang/c/*/*.d
 /tools/cufiles
 /tools/dumpptrs
@@ -44,7 +59,8 @@
 /config.h.in
 /config.mk
 /include/liballocs_config.h
-
+/include/uniqtype-defs.h
+/include/uniqtype.h
 
 /Makefile
 
@@ -169,6 +185,11 @@ tmp-*.txt
 /tools/lang/c/cil.stamp
 
 /allocsld/allocsld.lds
+/allocsld/allocsld-plain.os
+/allocsld/allocsld-plain.os.map
+/allocsld/allocsld.h
+/allocsld/allocsld.os
+/allocsld/allocsld.so.map
 
 config.h.in
 contrib/config.mk
