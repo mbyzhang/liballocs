@@ -46,7 +46,9 @@ using dwarf::core::compile_unit_die;
 
 using namespace dwarf::lib;
 
-static int debug_out = 1;
+static int debug_out = 0;
+static int comment_out = 0;
+static int pretty_out = 0;
 
 using dwarf::lib::Dwarf_Off;
 using dwarf::lib::Dwarf_Addr;
@@ -97,6 +99,15 @@ int main(int argc, char **argv)
 	{
 		debug_out = atoi(getenv("METAVECTOR_DEBUG"));
 	}
+	if (getenv("METAVECTOR_COMMENT"))
+	{
+		comment_out = atoi(getenv("METAVECTOR_COMMENT"));
+	}
+	if (getenv("METAVECTOR_PRETTY"))
+	{
+		pretty_out = atoi(getenv("METAVECTOR_PRETTY"));
+	}
+
 	using core::root_die;
 	int fd = fileno(infstream);
 	shared_ptr<sticky_root_die> p_root = sticky_root_die::create(fd);
@@ -289,8 +300,9 @@ scan_reloc_target_addr_end_pairs(Elf *e,
 					);
 			GElf_Shdr shdr = get_shdr(e, shndx);
 			Elf64_Sword referenced_section_end = shdr.sh_addr + shdr.sh_size;
-			std::cerr << "Saw a reloc target at 0x" << std::hex << referenced_vaddr
-				<< " (limit: 0x" << referenced_section_end << ")"<< std::dec << std::endl;
+			if (debug_out)
+				std::cerr << "Saw a reloc target at 0x" << std::hex << referenced_vaddr
+					<< " (limit: 0x" << referenced_section_end << ")"<< std::dec << std::endl;
 			ostringstream comment;
 			comment << relscn_namestr << "[" << i << "]";
 			target_addrs.insert(make_pair(
@@ -365,7 +377,7 @@ add_sane_reloc_intervals(
 			recs.insert(make_pair(i_tuple->second.first, /* the addr/end pair is the itself second thing in a pair */
 				rec));
 		}
-		else std::cerr << "Discarding a reloc target at 0x" << std::hex << target.first
+		else if (debug_out) std::cerr << "Discarding a reloc target at 0x" << std::hex << target.first
 				<< " for overlap with static "
 				<< found_overlapping->second.get_summary(true).descr_priority_k << std::dec << std::endl;
 
@@ -467,8 +479,11 @@ void output_one_segment_metavec(int idx, ElfW(Phdr) *ph,
 	// what are the segment limits?
 	uintptr_t base_addr = ph->p_vaddr;
 	uintptr_t limit_addr = base_addr + ph->p_memsz;
-	cout << "// metavector for segment " << idx << " spanning 0x" << std::hex << base_addr
-		<< " to 0x" << limit_addr << std::dec << std::endl;
+	if (comment_out)
+	{
+		cout << "// metavector for segment " << idx << " spanning 0x" << std::hex << base_addr
+			<< " to 0x" << limit_addr << std::dec << std::endl;
+	}
 	// cout << "unsigned long metavec_0x" << std::hex << base_addr << std::dec << "[] = {" << std::endl;
 	cout << "__asm__(\".pushsection .rodata \\n\\" << std::endl;
 	cout << ".globl metavec_0x" << std::hex << base_addr << std::dec << " \\n\\" << std::endl;
@@ -485,24 +500,30 @@ void output_one_segment_metavec(int idx, ElfW(Phdr) *ph,
 				cout << ".8byte \"STR(SYM_ONLY_REC_WORD(" << (int) i_rec->second.k << ", "
 					<< i_rec->second.idx_in_per_kind_table << ", "
 					<< ((i_rec->second.maybe_uniqtype) ? mangle_typename(*i_rec->second.maybe_uniqtype) : "0")
-					<< "))\" ; // alloc at 0x" << std::hex << i_rec->first << std::dec
-					<< " of kind " << i_rec->second.k
-					<< " (based on priority kind " << i_rec->second.priority_k << ")"
-					<< " (" << i_rec->second.extra_comment << ")"
-					<< "\\n \\" << std::endl;
+					<< "))\" ;";
+				if (comment_out) {
+					cout << "// alloc at 0x" << std::hex << i_rec->first << std::dec
+						<< " of kind " << i_rec->second.k
+						<< " (based on priority kind " << i_rec->second.priority_k << ")"
+						<< " (" << i_rec->second.extra_comment << ")";
+				}
+				cout << "\\n \\" << std::endl;
 			}
 			else
 			{
 				auto i_next_rec = i_rec; ++i_next_rec;
 				cout << ".8byte \"STR(RELOC_ONLY_REC_WORD("
-					<< "/* alloc at */ 0x" << std::hex << i_rec->first << std::dec << ", "
-					<< "/* size */ " /* calculate the size using the next record... */
+					<< (comment_out ? "/* alloc at */ ": "") << "0x" << std::hex << i_rec->first << std::dec << ", "
+					<< (comment_out ? "/* size */ " : "") /* calculate the size using the next record... */
 					<< ((i_next_rec == recs.end()) ? (limit_addr - i_rec->first)
 					         : i_next_rec->first - i_rec->first)
-					<< "))\" ; // of kind " << i_rec->second.k
-					<< " (based on priority kind " << i_rec->second.priority_k << ")"
-					<< " (" << i_rec->second.extra_comment << ")"
-					<< "\\n \\" << std::endl;
+					<< "))\" ;";
+				if (comment_out) {
+					cout << "	// of kind " << i_rec->second.k
+						<< " (based on priority kind " << i_rec->second.priority_k << ")"
+						<< " (" << i_rec->second.extra_comment << ")"; 
+				}
+				cout << "\\n \\" << std::endl;
 			}
 		};
 	}
@@ -533,10 +554,13 @@ void output_one_segment_metavec(int idx, ElfW(Phdr) *ph,
 			++nbits_set;
 		}
 	}
-	cout << "// Now a bitmap spanning " << (bitmap_limit_addr - bitmap_base_addr)
-		 << " bytes, with " << nbits_set << " bits set" << std::endl;
+	if (comment_out)
+		cout << "// Now a bitmap spanning " << (bitmap_limit_addr - bitmap_base_addr)
+			<< " bytes, with " << nbits_set << " bits set" << std::endl;
 	cout << "bitmap_word_t bitmap_0x" << std::hex << base_addr << std::dec << "[] = {" << std::endl;
-	cout << "/*               |-00      |-08      |-10      |-18      |-20      |-28      |-30      |-38      |-40      |-48      |-50      |-58      |-60      |-68      |-70      |-78      |-80      |-88      |-90      |-98      |-a0      |-a8      |-b0      |-b8      |-c0      |-c8      |-d0      |-d8      |-e0      |-e8      |-f0      |-f8 ff-|  */" << std::endl;
+
+	if (comment_out)
+		cout << "/*               |-00      |-08      |-10      |-18      |-20      |-28      |-30      |-38      |-40      |-48      |-50      |-58      |-60      |-68      |-70      |-78      |-80      |-88      |-90      |-98      |-a0      |-a8      |-b0      |-b8      |-c0      |-c8      |-d0      |-d8      |-e0      |-e8      |-f0      |-f8 ff-|  */" << std::endl;
 //  cout << "/* 0b0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 
 	/* To make this readable, we format this as follows.
 	 * (Remember that our bitmap is big-endian. 
@@ -554,17 +578,20 @@ void output_one_segment_metavec(int idx, ElfW(Phdr) *ph,
 		assert(start_new_line || (idx == bitmap_nwords));
 		assert(!start_new_line ||
 			(base_addr_of_current_word % line_nbytes == 0));
-		cout << " */ ";
+		if (comment_out) cout << " */ ";
 		for (unsigned j = printed_words_up_to_idx; j < idx; ++j)
 		{
 			// actually print the bitmap words as words
-			cout << "0x" << setw(BITMAP_WORD_NBITS / 4) << setfill('0')
-				<< std::hex << bitmap[j] << std::dec;
-			if (idx != bitmap_nwords || j+1 != idx) cout << ", ";
+			if (bitmap[j] == 0 && !pretty_out)
+				cout << "0";
+			else
+				cout << "0x" << setw(pretty_out ? BITMAP_WORD_NBITS / 4 : 0) << setfill('0')
+					<< std::hex << bitmap[j] << std::dec;
+			if (idx != bitmap_nwords || j+1 != idx) cout << (pretty_out ? ", " : ",");
 		}
-		if (start_new_line)
+		if (start_new_line && comment_out)
 		{
-			cout << "\n/* 0x" << std::hex << setw(8) << setfill('0')
+			cout << "\n/* 0x" << std::hex << setw(pretty_out ? 8 : 0) << setfill('0')
 				<< ROUND_DOWN(base_addr_of_current_word, line_nbytes) << std::dec
 				<< ": 0b";
 		}
@@ -575,13 +602,15 @@ void output_one_segment_metavec(int idx, ElfW(Phdr) *ph,
 	unsigned nbytes_to_boundary = ROUND_UP(base_addr_of_current_word, line_nbytes) - base_addr_of_current_word;
 	assert(nbytes_to_boundary % (BITMAP_WORD_NBITS/8) == 0);
 	// we write 5 bytes per 4 addresses
-	cout << "/* 0x" << std::hex << setw(8) << setfill('0') 
-		<< ROUND_DOWN(base_addr_of_current_word, line_nbytes) << std::dec << ": ";
-	for (unsigned j = 0; j < nbytes_to_boundary / 4; ++j)
-	{
-		cout << "     ";
+	if (comment_out) {
+		cout << "/* 0x" << std::hex << setw(pretty_out ? 8 : 0) << setfill('0') 
+			<< ROUND_DOWN(base_addr_of_current_word, line_nbytes) << std::dec << ": ";
+		for (unsigned j = 0; j < nbytes_to_boundary / 4; ++j)
+		{
+			cout << "     ";
+		}
+		cout << "0b";
 	}
-	cout << "0b";
 	unsigned digits_printed = 0;
 	unsigned i = 0;
 	for (; i < bitmap_nwords; base_addr_of_current_word += BITMAP_WORD_NBITS, ++i)
@@ -592,19 +621,22 @@ void output_one_segment_metavec(int idx, ElfW(Phdr) *ph,
 			flush_content_up_to(i, true);
 		}
 		
-		// actually print the binary digits of the current word, from bit 63 down to 0
-		for (unsigned j = 0; j < BITMAP_WORD_NBITS; ++j)
-		{
-			if (j != 0 && j % 4 == 0) cout << " ";
-			cout << ((bitmap[i] & (1ul<<BITMAP_WORD_NBITS-1-j)) ? '1' : '0');
-			++digits_printed;
-			assert(digits_printed <= (bitmap_limit_addr - bitmap_base_addr));
+		if (comment_out) {
+			// actually print the binary digits of the current word, from bit 63 down to 0
+			for (unsigned j = 0; j < BITMAP_WORD_NBITS; ++j)
+			{
+				if (j != 0 && j % 4 == 0) cout << " ";
+				cout << ((bitmap[i] & (1ul<<BITMAP_WORD_NBITS-1-j)) ? '1' : '0');
+				++digits_printed;
+				assert(digits_printed <= (bitmap_limit_addr - bitmap_base_addr));
+			}
+			cout << " ";
 		}
-		cout << " ";
 	}
+
 	// now we've flushed all the line-sized boundaries we've crossed,
 	// but we may have a final line to flush
-	assert(digits_printed == (bitmap_limit_addr - bitmap_base_addr));
+	assert(!comment_out || digits_printed == (bitmap_limit_addr - bitmap_base_addr));
 	flush_content_up_to(i, false);
 	cout << std:: endl << "};" << std::endl;
 }
