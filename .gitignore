@@ -44,6 +44,7 @@
 /tools/lang/c/*/*.d
 /tools/cufiles
 /tools/dumpptrs
+/tools/objdumpallocs-capstone
 /tools/*.s
 
 /contrib/antlr-3.4-complete.jar

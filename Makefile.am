@@ -49,7 +49,8 @@ include/uniqtype.h include/uniqtype-defs.h:
 bin_PROGRAMS = tools/dwarftypes tools/alloctypes tools/frametypes \
   tools/frametypes2 tools/extrasyms tools/metavector tools/dumpptrs \
   tools/allocsites tools/usedtypes tools/ifacetypes tools/find-allocated-type-size \
-  tools/cufiles tools/pervasive-types tools/noopgen tools/dumpsyscalls
+  tools/cufiles tools/pervasive-types tools/noopgen tools/dumpsyscalls \
+  tools/objdumpallocs-capstone
 #tools/objdumpallocs-llvm
 
 LIBELF ?= -lelf
@@ -124,6 +125,10 @@ librunt_libdir := $(librunt)/build/$(if $(DEBUG),debug,opt)-$(shell uname -m)
 tools_dumpsyscalls_LDFLAGS = -L$(libsystrap_libdir) -lsystrap \
  -Wl,--defsym,__wrap___runt_files_notify_load=__runt_files_notify_load \
  -L$(librunt_libdir) -lrunt
+
+tools_objdumpallocs_capstone_SOURCES = tools/objdumpallocs-capstone.cpp
+tools_objdumpallocs_capstone_LDADD = -lcapstone
+tools_objdumpallocs_capstone_CXXFLAGS = $(TOOLS_CXXFLAGS)
 
 pkglib_LTLIBRARIES = tools/gold-plugin.la
 tools_gold_plugin_la_SOURCES = tools/gold-plugin.cpp

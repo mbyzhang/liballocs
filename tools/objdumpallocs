@@ -2,6 +2,18 @@
 
 # Build a list of allocation sites using the power of objdump.
 
+if [[ -x "$(dirname "$0")"/objdumpallocs-capstone ]]; then
+    case $(basename "$0") in
+        (*dumpallocs|*dumpmeta|*dumpmemacc)
+            outputstyle="tab"
+            ;;
+        (*)
+            outputstyle="punc"
+            ;;
+    esac
+    exec "$(dirname "$0")"/objdumpallocs-capstone --outputstyle "$outputstyle" "$@"
+fi
+
 # some stock definitions
 # FIXME: this doesn't escape some metacharacters, notably '[' and ']',
 # -- including the latter seemed to mess up the sed expression
