@@ -25,11 +25,11 @@ DUMPSYSCALLS ?= $(dir $(THIS_MAKEFILE))/dumpsyscalls
 LDD_FUNCS ?= $(dir $(THIS_MAKEFILE))/ldd-funcs.sh
 OBJDUMPALLOCS ?= $(dir $(THIS_MAKEFILE))/objdumpallocs
 MERGE_ALLOCS ?= $(dir $(THIS_MAKEFILE))/merge-allocs.sh
-GATHER_SRCALLOCS ?= $(dir $(THIS_MAKEFILE))/gather-srcallocs.sh
+GATHER_SRCALLOCS ?= $(dir $(THIS_MAKEFILE))/gather-srcallocs
 
 OBJDUMPMEMACC ?= $(dir $(THIS_MAKEFILE))/objdumpmemacc
 MERGE_MEMACC ?= $(dir $(THIS_MAKEFILE))/merge-allocs.sh # FIXME: change name
-GATHER_SRCMEMACC ?= $(dir $(THIS_MAKEFILE))/gather-srcmemacc.sh
+GATHER_SRCMEMACC ?= $(dir $(THIS_MAKEFILE))/gather-srcmemacc
 
 ifneq ($(LIBALLOCSTOOL),)
 CFLAGS += -I$(LIBALLOCSTOOL)/include

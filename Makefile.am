@@ -50,7 +50,7 @@ bin_PROGRAMS = tools/dwarftypes tools/alloctypes tools/frametypes \
   tools/frametypes2 tools/extrasyms tools/metavector tools/dumpptrs \
   tools/allocsites tools/usedtypes tools/ifacetypes tools/find-allocated-type-size \
   tools/cufiles tools/pervasive-types tools/noopgen tools/dumpsyscalls \
-  tools/objdumpallocs-capstone
+  tools/objdumpallocs-capstone tools/gather-srcallocs
 #tools/objdumpallocs-llvm
 
 LIBELF ?= -lelf
@@ -129,6 +129,10 @@ tools_dumpsyscalls_LDFLAGS = -L$(libsystrap_libdir) -lsystrap \
 tools_objdumpallocs_capstone_SOURCES = tools/objdumpallocs-capstone.cpp
 tools_objdumpallocs_capstone_LDADD = -lcapstone
 tools_objdumpallocs_capstone_CXXFLAGS = $(TOOLS_CXXFLAGS)
+
+tools_gather_srcallocs_SOURCES = tools/gather-srcallocs.cpp
+tools_gather_srcallocs_LDADD = $(TOOLS_LDADD)
+tools_gather_srcallocs_CXXFLAGS = $(TOOLS_CXXFLAGS)
 
 pkglib_LTLIBRARIES = tools/gold-plugin.la
 tools_gold_plugin_la_SOURCES = tools/gold-plugin.cpp
